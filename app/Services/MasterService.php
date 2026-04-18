@@ -16,7 +16,8 @@ class MasterService
     public function getByGroup(string $group): Collection
     {
         return Cache::remember("master_group_{$group}", $this->cacheTtl, function () use ($group) {
-            return Master::byGroup($group)->orderBy('m_name')->get();
+            $records = Master::byGroup($group)->orderBy('m_name')->get();
+            return $this->sortByClassOrder($group, $records);
         });
     }
     
@@ -26,23 +27,21 @@ class MasterService
     public function getOptions(string $group): array
     {
         return Cache::remember("master_options_{$group}", $this->cacheTtl, function () use ($group) {
-            return Master::byGroup($group)
-                ->orderBy('m_name')
-                ->pluck('m_alias_name', 'm_name')
-                ->toArray();
+            $records = Master::byGroup($group)->get();
+            $sorted = $this->sortByClassOrder($group, $records);
+            return $sorted->pluck('m_alias_name', 'm_name')->toArray();
         });
     }
     
     /**
-     * Get options with ID as key
+     * Get options with ID as key (for storing ID with display name)
      */
     public function getOptionsWithId(string $group): array
     {
         return Cache::remember("master_options_id_{$group}", $this->cacheTtl, function () use ($group) {
-            return Master::byGroup($group)
-                ->orderBy('m_name')
-                ->pluck('m_alias_name', 'm_id')
-                ->toArray();
+            $records = Master::byGroup($group)->get();
+            $sorted = $this->sortByClassOrder($group, $records);
+            return $sorted->pluck('m_name', 'm_id')->toArray();
         });
     }
     
@@ -52,7 +51,8 @@ class MasterService
     public function getByGroupAndType(string $group, string $type): Collection
     {
         return Cache::remember("master_group_{$group}_type_{$type}", $this->cacheTtl, function () use ($group, $type) {
-            return Master::byGroup($group)->byType($type)->orderBy('m_name')->get();
+            $records = Master::byGroup($group)->byType($type)->get();
+            return $this->sortByClassOrder($group, $records);
         });
     }
     
@@ -70,10 +70,53 @@ class MasterService
     public function getActiveByGroup(string $group): Collection
     {
         return Cache::remember("master_group_{$group}_active", $this->cacheTtl, function () use ($group) {
-            return Master::byGroup($group)->active()->orderBy('m_name')->get();
+            $records = Master::byGroup($group)->active()->get();
+            return $this->sortByClassOrder($group, $records);
         });
     }
-    
+
+    /**
+     * Sort classes with Nursery, LKG, UKG first, then by numeric order
+     */
+    protected function sortByClassOrder(string $group, Collection $records): Collection
+    {
+        // Only apply special sorting for CLASS group
+        if (strtoupper($group) !== 'CLASS') {
+            return $records->sortBy('m_name');
+        }
+
+        return $records->sort(function ($a, $b) {
+            $aName = strtoupper($a->m_name);
+            $bName = strtoupper($b->m_name);
+
+            // Define priority order for special classes
+            $priorities = ['NURSERY' => 0, 'LKG' => 1, 'UKG' => 2];
+
+            $aPriority = $priorities[$aName] ?? 3;
+            $bPriority = $priorities[$bName] ?? 3;
+
+            // If priorities are different, sort by priority
+            if ($aPriority !== $bPriority) {
+                return $aPriority - $bPriority;
+            }
+
+            // If both are numeric or both are special classes
+            if ($aPriority === 3) {
+                // Convert to number for sorting (e.g., "1", "2", "10")
+                $aNum = (int)$aName;
+                $bNum = (int)$bName;
+                
+                // If both are numeric, sort numerically
+                if ($aNum > 0 && $bNum > 0) {
+                    return $aNum - $bNum;
+                }
+            }
+
+            // Default alphabetical sort
+            return strcmp($aName, $bName);
+        })->values();
+    }
+
     /**
      * Create new master record
      */
@@ -171,7 +214,7 @@ class MasterService
      */
     public function getSchoolTypes(): array
     {
-        return $this->getOptions('SCHOOL_TYPE');
+        return $this->getOptionsWithId('SCHOOL_TYPE');
     }
     
     /**
@@ -179,7 +222,7 @@ class MasterService
      */
     public function getManagementTypes(): array
     {
-        return $this->getOptions('MANAGEMENT_TYPE');
+        return $this->getOptionsWithId('MANAGEMENT_TYPE');
     }
     
     /**
@@ -187,7 +230,7 @@ class MasterService
      */
     public function getAffiliationBoards(): array
     {
-        return $this->getOptions('AFFILIATION_BOARD');
+        return $this->getOptionsWithId('AFFILIATION_BOARD');
     }
     
     /**
@@ -195,7 +238,7 @@ class MasterService
      */
     public function getClasses(): array
     {
-        return $this->getOptions('CLASS');
+        return $this->getOptionsWithId('CLASS');
     }
     
     /**
@@ -203,7 +246,7 @@ class MasterService
      */
     public function getStreams(): array
     {
-        return $this->getOptions('STREAM');
+        return $this->getOptionsWithId('STREAM');
     }
     
     /**
@@ -211,7 +254,7 @@ class MasterService
      */
     public function getMediums(): array
     {
-        return $this->getOptions('MEDIUM');
+        return $this->getOptionsWithId('MEDIUM');
     }
     
     /**
@@ -219,7 +262,7 @@ class MasterService
      */
     public function getSubscriptionPlans(): array
     {
-        return $this->getOptions('SUBSCRIPTION_PLAN');
+        return $this->getOptionsWithId('SUBSCRIPTION_PLAN');
     }
     
     /**
@@ -227,7 +270,7 @@ class MasterService
      */
     public function getGenders(): array
     {
-        return $this->getOptions('GENDER');
+        return $this->getOptionsWithId('GENDER');
     }
     
     /**
@@ -235,7 +278,7 @@ class MasterService
      */
     public function getBloodGroups(): array
     {
-        return $this->getOptions('BLOOD_GROUP');
+        return $this->getOptionsWithId('BLOOD_GROUP');
     }
     
     /**
@@ -243,7 +286,7 @@ class MasterService
      */
     public function getAttendanceStatus(): array
     {
-        return $this->getOptions('ATTENDANCE_STATUS');
+        return $this->getOptionsWithId('ATTENDANCE_STATUS');
     }
     
     /**
@@ -251,7 +294,7 @@ class MasterService
      */
     public function getLeaveTypes(): array
     {
-        return $this->getOptions('LEAVE_TYPE');
+        return $this->getOptionsWithId('LEAVE_TYPE');
     }
     
     /**
@@ -259,7 +302,7 @@ class MasterService
      */
     public function getFeeFrequencies(): array
     {
-        return $this->getOptions('FEE_FREQUENCY');
+        return $this->getOptionsWithId('FEE_FREQUENCY');
     }
     
     /**
@@ -267,7 +310,7 @@ class MasterService
      */
     public function getPaymentModes(): array
     {
-        return $this->getOptions('PAYMENT_MODE');
+        return $this->getOptionsWithId('PAYMENT_MODE');
     }
     
     /**
@@ -275,7 +318,7 @@ class MasterService
      */
     public function getExamTypes(): array
     {
-        return $this->getOptions('EXAM_TYPE');
+        return $this->getOptionsWithId('EXAM_TYPE');
     }
     
     /**
@@ -283,7 +326,7 @@ class MasterService
      */
     public function getReligions(): array
     {
-        return $this->getOptions('RELIGION');
+        return $this->getOptionsWithId('RELIGION');
     }
     
     /**
@@ -291,7 +334,15 @@ class MasterService
      */
     public function getCategories(): array
     {
-        return $this->getOptions('CATEGORY');
+        return $this->getOptionsWithId('CATEGORY');
+    }
+
+    /**
+     * Get affiliation statuses
+     */
+    public function getAffiliationStatuses(): array
+    {
+        return $this->getOptionsWithId('AFFILIATION_STATUS');
     }
     
     /**

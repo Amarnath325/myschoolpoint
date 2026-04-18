@@ -45,27 +45,26 @@ class Master extends Model
     // Helper methods
     public static function getByGroup(string $group): \Illuminate\Support\Collection
     {
-        return self::where('m_group', strtoupper($group))
-            ->orderBy('m_name')
+        $records = self::where('m_group', strtoupper($group))
             ->get();
+        return self::applySorting(strtoupper($group), $records);
     }
-    
+
     public static function getByGroupAndType(string $group, string $type): \Illuminate\Support\Collection
     {
-        return self::where('m_group', strtoupper($group))
+        $records = self::where('m_group', strtoupper($group))
             ->where('m_type', $type)
-            ->orderBy('m_name')
             ->get();
+        return self::applySorting(strtoupper($group), $records);
     }
-    
+
     public static function getOptions(string $group): array
     {
-        return self::where('m_group', strtoupper($group))
-            ->orderBy('m_name')
-            ->pluck('m_alias_name', 'm_name')
-            ->toArray();
+        $records = self::where('m_group', strtoupper($group))->get();
+        $sorted = self::applySorting(strtoupper($group), $records);
+        return $sorted->pluck('m_alias_name', 'm_name')->toArray();
     }
-    
+
     public static function getValue(string $group, string $key): ?string
     {
         $record = self::where('m_group', strtoupper($group))
@@ -73,6 +72,49 @@ class Master extends Model
             ->first();
         
         return $record ? $record->m_alias_name ?? $record->m_name : null;
+    }
+
+    /**
+     * Sort records with custom logic for CLASS group
+     * Classes: Nursery, LKG, UKG first, then numeric classes
+     */
+    protected static function applySorting(string $group, \Illuminate\Support\Collection $records): \Illuminate\Support\Collection
+    {
+        // Only apply special sorting for CLASS group
+        if ($group !== 'CLASS') {
+            return $records->sortBy('m_name')->values();
+        }
+
+        return $records->sort(function ($a, $b) {
+            $aName = strtoupper($a->m_name);
+            $bName = strtoupper($b->m_name);
+
+            // Define priority order for special classes
+            $priorities = ['NURSERY' => 0, 'LKG' => 1, 'UKG' => 2];
+
+            $aPriority = $priorities[$aName] ?? 3;
+            $bPriority = $priorities[$bName] ?? 3;
+
+            // If priorities are different, sort by priority
+            if ($aPriority !== $bPriority) {
+                return $aPriority - $bPriority;
+            }
+
+            // If both are numeric or both are special classes
+            if ($aPriority === 3) {
+                // Convert to number for sorting (e.g., "1", "2", "10")
+                $aNum = (int)$aName;
+                $bNum = (int)$bName;
+                
+                // If both are numeric, sort numerically
+                if ($aNum > 0 && $bNum > 0) {
+                    return $aNum - $bNum;
+                }
+            }
+
+            // Default alphabetical sort
+            return strcmp($aName, $bName);
+        })->values();
     }
     
     // Accessor for display name

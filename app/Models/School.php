@@ -132,10 +132,10 @@ class School extends Model
     }
     
     // Accessors
-    public function getFullAddressAttribute(): string
+    public function getFormattedAddressAttribute(): string
     {
         return implode(', ', array_filter([
-            $this->full_address,
+            $this->attributes['full_address'] ?? null,
             $this->city,
             $this->state,
             $this->pincode,

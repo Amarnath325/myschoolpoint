@@ -99,6 +99,15 @@ class MasterTableSeeder extends Seeder
             ['m_group' => 'STATUS', 'm_name' => 'APPROVED', 'm_alias_name' => 'Approved', 'm_type' => 'active', 'm_description' => 'Approved status'],
             ['m_group' => 'STATUS', 'm_name' => 'REJECTED', 'm_alias_name' => 'Rejected', 'm_type' => 'inactive', 'm_description' => 'Rejected status'],
         ];
+
+        // AFFILIATION STATUS
+        $affiliationStatuses = [
+            ['m_group' => 'AFFILIATION_STATUS', 'm_name' => 'Active', 'm_alias_name' => 'active', 'm_type' => 'active', 'm_description' => 'Affiliation is active and valid'],
+            ['m_group' => 'AFFILIATION_STATUS', 'm_name' => 'Pending', 'm_alias_name' => 'pending', 'm_type' => 'pending', 'm_description' => 'Affiliation is pending approval'],
+            ['m_group' => 'AFFILIATION_STATUS', 'm_name' => 'Expired', 'm_alias_name' => 'expired', 'm_type' => 'expired', 'm_description' => 'Affiliation has expired'],
+            ['m_group' => 'AFFILIATION_STATUS', 'm_name' => 'Suspended', 'm_alias_name' => 'suspended', 'm_type' => 'suspended', 'm_description' => 'Affiliation is suspended'],
+            ['m_group' => 'AFFILIATION_STATUS', 'm_name' => 'Revoked', 'm_alias_name' => 'revoked', 'm_type' => 'revoked', 'm_description' => 'Affiliation has been revoked'],
+        ];
         
         // GENDER TYPES
         $genders = [
@@ -229,6 +238,7 @@ class MasterTableSeeder extends Seeder
             $mediums,
             $subscriptionPlans,
             $statusTypes,
+            $affiliationStatuses,
             $genders,
             $bloodGroups,
             $attendanceStatus,

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\School;
 use App\Models\User;
+use App\Models\Master;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -12,15 +13,117 @@ use Illuminate\Support\Facades\Storage;
 
 class SchoolController extends Controller
 {
+    public function getSchoolTypes()
+    {
+        $schoolTypes = Master::getByGroup('SCHOOL_TYPE');
+        return response()->json([
+            'status' => true,
+            'message' => 'School type data fetched successfully',
+            'result' => $schoolTypes
+        ]);
+    }
+
+    public function getManagementTypes()
+    {
+        $managementTypes = Master::getByGroup('MANAGEMENT_TYPE');
+        return response()->json([
+            'status' => true,
+            'message' => 'Management type data fetched successfully',
+            'result' => $managementTypes
+        ]);
+    }
+
+    public function getAffiliationBoards()
+    {
+        $affiliationBoards = Master::getByGroup('AFFILIATION_BOARD');
+        return response()->json([
+            'status' => true,
+            'message' => 'Affiliation board data fetched successfully',
+            'result' => $affiliationBoards
+        ]);
+    }
+
+    public function getStatus()
+    {
+        $statuses = Master::getByGroup('STATUS');
+        return response()->json([
+            'status' => true,
+            'message' => 'Status data fetched successfully',
+            'result' => $statuses
+        ]);
+    }
+
+    public function getClass()
+    {
+        $classes = Master::getByGroup('CLASS');
+        return response()->json([
+            'status' => true,
+            'message' => 'Class data fetched successfully',
+            'result' => $classes
+        ]);
+    }
+
+    public function getStream()
+    {
+        $streams = Master::getByGroup('STREAM');
+        return response()->json([
+            'status' => true,
+            'message' => 'Stream data fetched successfully',
+            'result' => $streams
+        ]);
+    }
+
+    public function getMedium()
+    {
+        $medium = Master::getByGroup('MEDIUM');
+        return response()->json([
+            'status' => true,
+            'message' => 'Medium data fetched successfully',
+            'result' => $medium
+        ]);
+    }
+
+    public function getSubscriptionPlan()
+    {
+        $subscriptionPlans = Master::getByGroup('SUBSCRIPTION_PLAN');
+        return response()->json([
+            'status' => true,
+            'message' => 'Subscription plan data fetched successfully',
+            'result' => $subscriptionPlans
+        ]);
+    }
+
     public function register(Request $request)
     {
+        // Get valid values from Master data for dynamic validation
+        // Frontend now sends m_id as the value (numeric IDs)
+        $schoolTypes = Master::getByGroup('SCHOOL_TYPE')->pluck('m_id')->toArray();
+        $managementTypes = Master::getByGroup('MANAGEMENT_TYPE')->pluck('m_id')->toArray();
+        $affiliationBoards = Master::getByGroup('AFFILIATION_BOARD')->pluck('m_id')->toArray();
+        $classes = Master::getByGroup('CLASS')->pluck('m_id')->toArray();
+        $streams = Master::getByGroup('STREAM')->pluck('m_id')->toArray();
+        $mediums = Master::getByGroup('MEDIUM')->pluck('m_id')->toArray();
+        $subscriptionPlans = Master::getByGroup('SUBSCRIPTION_PLAN')->pluck('m_id')->toArray();
+        
+        // Get affiliation statuses - support both m_id values and hardcoded strings for backward compatibility
+        $affiliationStatusMasters = Master::getByGroup('AFFILIATION_STATUS')->pluck('m_id')->toArray();
+        // If Master data exists, use m_ids; otherwise accept any values and let the field store as integer
+        $affiliationStatuses = !empty($affiliationStatusMasters) 
+            ? $affiliationStatusMasters 
+            : '1,2,3'; // Default numeric values if master data not present
+        
+        // Convert affiliationStatuses array to string for 'in' validation rule
+        if (is_array($affiliationStatuses)) {
+            $affiliationStatuses = implode(',', array_map('strval', $affiliationStatuses));
+        }
+        
         $validated = $request->validate([
             // Basic Information
             'school_name' => 'required|string|max:255',
             'school_code' => 'required|string|unique:schools',
             'established_year' => 'nullable|integer|min:1900|max:' . date('Y'),
-            'school_type' => 'required|in:day,boarding,day_boarding',
-            'management_type' => 'required|in:private,government,aided',
+            'school_type' => 'required|in:' . implode(',', $schoolTypes),
+            'management_type' => 'required|in:' . implode(',', $managementTypes),
             
             // Location
             'country' => 'required|string|max:100',
@@ -37,14 +140,17 @@ class SchoolController extends Controller
             'website' => 'nullable|url',
             
             // Affiliation
-            'affiliation_board' => 'required|string',
+            'affiliation_board' => 'required|in:' . implode(',', $affiliationBoards),
             'affiliation_number' => 'nullable|string',
-            'affiliation_status' => 'required|in:active,pending,expired',
+            'affiliation_status' => 'required|in:' . $affiliationStatuses,
             
-            // Academic
+            // Academic - Laravel automatically parses bracket notation into arrays
             'classes_available' => 'nullable|array',
+            'classes_available.*' => 'in:' . implode(',', $classes),
             'streams_available' => 'nullable|array',
+            'streams_available.*' => 'in:' . implode(',', $streams),
             'medium_of_instruction' => 'nullable|array',
+            'medium_of_instruction.*' => 'in:' . implode(',', $mediums),
             
             // Infrastructure
             'has_labs' => 'boolean',
@@ -54,7 +160,7 @@ class SchoolController extends Controller
             'has_transport' => 'boolean',
             
             // Subscription
-            'subscription_plan' => 'required|in:free,basic,premium',
+            'subscription_plan' => 'required|in:' . implode(',', $subscriptionPlans),
             
             // About
             'about_school' => 'nullable|string',
@@ -67,6 +173,17 @@ class SchoolController extends Controller
             'gallery_images.*' => 'image|mimes:jpg,jpeg,png|max:2048',
         ]);
         
+        // Convert array values - store as JSON
+        $validated['classes_available'] = $validated['classes_available'] ? json_encode($validated['classes_available']) : json_encode([]);
+        $validated['streams_available'] = $validated['streams_available'] ? json_encode($validated['streams_available']) : json_encode([]);
+        $validated['medium_of_instruction'] = $validated['medium_of_instruction'] ? json_encode($validated['medium_of_instruction']) : json_encode(['ENGLISH']);
+        
+        // Ensure affiliation_status is stored as integer
+        $validated['affiliation_status'] = (int)$validated['affiliation_status'];
+        
+        // All other values (school_type, management_type, affiliation_board, subscription_plan, affiliation_status) 
+        // are already m_id values and will be stored as integers directly
+        
         DB::beginTransaction();
         
         try {
@@ -76,14 +193,14 @@ class SchoolController extends Controller
                 $logoPath = $request->file('logo')->store('schools/logos', 'public');
             }
             
-            // Create School
+            // Create School - store m_id values and JSON arrays directly
             $school = School::create([
                 // Basic Information
                 'business_name' => $validated['school_name'],
                 'school_code' => $validated['school_code'],
                 'established_year' => $validated['established_year'] ?? null,
-                'school_type' => $validated['school_type'],
-                'management_type' => $validated['management_type'],
+                'school_type' => $validated['school_type'],           // m_id (int)
+                'management_type' => $validated['management_type'],   // m_id (int)
                 
                 // Location
                 'country' => $validated['country'],
@@ -100,14 +217,14 @@ class SchoolController extends Controller
                 'website' => $validated['website'] ?? null,
                 
                 // Affiliation
-                'affiliation_board' => $validated['affiliation_board'],
+                'affiliation_board' => $validated['affiliation_board'],       // m_id (int)
                 'affiliation_number' => $validated['affiliation_number'] ?? null,
-                'affiliation_status' => $validated['affiliation_status'],
+                'affiliation_status' => $validated['affiliation_status'],   // m_id (int)
                 
-                // Academic
-                'classes_available' => $validated['classes_available'] ?? [],
-                'streams_available' => $validated['streams_available'] ?? [],
-                'medium_of_instruction' => $validated['medium_of_instruction'] ?? ['english'],
+                // Academic - stored as JSON
+                'classes_available' => $validated['classes_available'],
+                'streams_available' => $validated['streams_available'],
+                'medium_of_instruction' => $validated['medium_of_instruction'],
                 
                 // Infrastructure
                 'has_labs' => $validated['has_labs'] ?? false,
@@ -117,16 +234,16 @@ class SchoolController extends Controller
                 'has_transport' => $validated['has_transport'] ?? false,
                 
                 // Subscription
-                'subscription_plan' => $validated['subscription_plan'],
+                'subscription_plan' => $validated['subscription_plan'],      // m_id (int)
                 'subscription_start_date' => now(),
-                'subscription_end_date' => $validated['subscription_plan'] === 'free' ? now()->addDays(30) : now()->addYear(),
+                'subscription_end_date' => now()->addYear(),
                 
                 // About
                 'about_school' => $validated['about_school'] ?? null,
                 
                 // Status
-                'status' => 'active',
-                'logo' => $logoPath,
+                'status' => 1,
+                'school_logo' => $logoPath,
             ]);
             
             // Handle gallery images
@@ -136,20 +253,21 @@ class SchoolController extends Controller
                     $path = $image->store('schools/gallery', 'public');
                     $galleryPaths[] = $path;
                 }
-                $school->settings = array_merge($school->settings ?? [], ['gallery' => $galleryPaths]);
+                $school->school_gallery = json_encode($galleryPaths);
                 $school->save();
             }
             
             // Handle certificates
-            $certificates = [];
+            $certificatePaths = [];
             if ($request->hasFile('affiliation_certificate')) {
-                $certificates['affiliation'] = $request->file('affiliation_certificate')->store('schools/certificates', 'public');
+                $certificatePaths['affiliation'] = $request->file('affiliation_certificate')->store('schools/certificates', 'public');
             }
             if ($request->hasFile('registration_certificate')) {
-                $certificates['registration'] = $request->file('registration_certificate')->store('schools/certificates', 'public');
+                $certificatePaths['registration'] = $request->file('registration_certificate')->store('schools/certificates', 'public');
             }
-            if (!empty($certificates)) {
-                $school->settings = array_merge($school->settings ?? [], ['certificates' => $certificates]);
+            if (!empty($certificatePaths)) {
+                $school->affiliate_certificate = $certificatePaths['affiliation'] ?? null;
+                $school->registration_certificate = $certificatePaths['registration'] ?? null;
                 $school->save();
             }
             
@@ -159,7 +277,7 @@ class SchoolController extends Controller
                 'message' => 'School registered successfully!',
                 'school' => $school,
                 'redirect' => '/login'
-            ], 201);
+            ], 200);
             
         } catch (\Exception $e) {
             DB::rollBack();

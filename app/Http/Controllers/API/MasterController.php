@@ -277,6 +277,14 @@ class MasterController extends Controller
             'data' => $this->masterService->getSubscriptionPlans()
         ]);
     }
+
+    public function getAffiliationStatuses()
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $this->masterService->getAffiliationStatuses()
+        ]);
+    }
     
     public function getGenders()
     {

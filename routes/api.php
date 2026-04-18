@@ -10,6 +10,7 @@ use App\Http\Controllers\API\ClassController;
 use App\Http\Controllers\API\AttendanceController;
 use App\Http\Controllers\API\ExamController;
 use App\Http\Controllers\API\FeeController;
+use App\Http\Controllers\API\MasterController;
 
 // Add CORS headers directly in route
 Route::options('/{any}', function () {
@@ -29,6 +30,7 @@ Route::get('/test', function () {
 
 // Public routes
 Route::post('register', [AuthController::class, 'registerSchool']);
+Route::post('school/register', [SchoolController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
 // Public Master Routes (For registration forms)
@@ -37,6 +39,7 @@ Route::prefix('master')->group(function () {
     Route::get('school-types', [MasterController::class, 'getSchoolTypes']);
     Route::get('management-types', [MasterController::class, 'getManagementTypes']);
     Route::get('affiliation-boards', [MasterController::class, 'getAffiliationBoards']);
+    Route::get('affiliation-statuses', [MasterController::class, 'getAffiliationStatuses']);
     Route::get('classes', [MasterController::class, 'getClasses']);
     Route::get('streams', [MasterController::class, 'getStreams']);
     Route::get('mediums', [MasterController::class, 'getMediums']);
@@ -60,41 +63,41 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('user', [AuthController::class, 'user']);
 
     // Master Routes (Admin only)
-    Route::prefix('master')->middleware('role:super_admin')->group(function () {
-        // CRUD Operations
-        Route::get('groups', [MasterController::class, 'getGroups']);
-        Route::post('/', [MasterController::class, 'store']);
-        Route::get('{master}', [MasterController::class, 'show']);
-        Route::put('{master}', [MasterController::class, 'update']);
-        Route::delete('{master}', [MasterController::class, 'destroy']);
-        Route::post('clear-cache', [MasterController::class, 'clearCache']);
+    // Route::prefix('master')->middleware('role:super_admin')->group(function () {
+    //     // CRUD Operations
+    //     Route::get('groups', [MasterController::class, 'getGroups']);
+    //     Route::post('/', [MasterController::class, 'store']);
+    //     Route::get('{master}', [MasterController::class, 'show']);
+    //     Route::put('{master}', [MasterController::class, 'update']);
+    //     Route::delete('{master}', [MasterController::class, 'destroy']);
+    //     Route::post('clear-cache', [MasterController::class, 'clearCache']);
         
-        // All group-specific endpoints (admin)
-        Route::get('school-types', [MasterController::class, 'getSchoolTypes']);
-        Route::get('management-types', [MasterController::class, 'getManagementTypes']);
-        Route::get('affiliation-boards', [MasterController::class, 'getAffiliationBoards']);
-        Route::get('classes', [MasterController::class, 'getClasses']);
-        Route::get('streams', [MasterController::class, 'getStreams']);
-        Route::get('mediums', [MasterController::class, 'getMediums']);
-        Route::get('subscription-plans', [MasterController::class, 'getSubscriptionPlans']);
-        Route::get('genders', [MasterController::class, 'getGenders']);
-        Route::get('blood-groups', [MasterController::class, 'getBloodGroups']);
-        Route::get('attendance-status', [MasterController::class, 'getAttendanceStatus']);
-        Route::get('leave-types', [MasterController::class, 'getLeaveTypes']);
-        Route::get('fee-frequencies', [MasterController::class, 'getFeeFrequencies']);
-        Route::get('payment-modes', [MasterController::class, 'getPaymentModes']);
-        Route::get('exam-types', [MasterController::class, 'getExamTypes']);
-        Route::get('religions', [MasterController::class, 'getReligions']);
-        Route::get('categories', [MasterController::class, 'getCategories']);
-        Route::get('days-of-week', [MasterController::class, 'getDaysOfWeek']);
-        Route::get('grades', [MasterController::class, 'getGrades']);
-        Route::get('statuses', [MasterController::class, 'getStatuses']);
+    //     // All group-specific endpoints (admin)
+    //     Route::get('school-types', [MasterController::class, 'getSchoolTypes']);
+    //     Route::get('management-types', [MasterController::class, 'getManagementTypes']);
+    //     Route::get('affiliation-boards', [MasterController::class, 'getAffiliationBoards']);
+    //     Route::get('classes', [MasterController::class, 'getClasses']);
+    //     Route::get('streams', [MasterController::class, 'getStreams']);
+    //     Route::get('mediums', [MasterController::class, 'getMediums']);
+    //     Route::get('subscription-plans', [MasterController::class, 'getSubscriptionPlans']);
+    //     Route::get('genders', [MasterController::class, 'getGenders']);
+    //     Route::get('blood-groups', [MasterController::class, 'getBloodGroups']);
+    //     Route::get('attendance-status', [MasterController::class, 'getAttendanceStatus']);
+    //     Route::get('leave-types', [MasterController::class, 'getLeaveTypes']);
+    //     Route::get('fee-frequencies', [MasterController::class, 'getFeeFrequencies']);
+    //     Route::get('payment-modes', [MasterController::class, 'getPaymentModes']);
+    //     Route::get('exam-types', [MasterController::class, 'getExamTypes']);
+    //     Route::get('religions', [MasterController::class, 'getReligions']);
+    //     Route::get('categories', [MasterController::class, 'getCategories']);
+    //     Route::get('days-of-week', [MasterController::class, 'getDaysOfWeek']);
+    //     Route::get('grades', [MasterController::class, 'getGrades']);
+    //     Route::get('statuses', [MasterController::class, 'getStatuses']);
         
-        // Generic endpoints
-        Route::get('options/{group}', [MasterController::class, 'getOptions']);
-        Route::get('options-id/{group}', [MasterController::class, 'getOptionsWithId']);
-        Route::get('group/{group}', [MasterController::class, 'getByGroup']);
-    });
+    //     // Generic endpoints
+    //     Route::get('options/{group}', [MasterController::class, 'getOptions']);
+    //     Route::get('options-id/{group}', [MasterController::class, 'getOptionsWithId']);
+    //     Route::get('group/{group}', [MasterController::class, 'getByGroup']);
+    // });
     
     // Super Admin only routes
     Route::middleware('user_type:super_admin')->prefix('super-admin')->group(function () {
