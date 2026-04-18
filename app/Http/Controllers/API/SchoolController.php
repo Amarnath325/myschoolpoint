@@ -173,10 +173,10 @@ class SchoolController extends Controller
             'gallery_images.*' => 'image|mimes:jpg,jpeg,png|max:2048',
         ]);
         
-        // Convert array values - store as JSON
-        $validated['classes_available'] = $validated['classes_available'] ? json_encode($validated['classes_available']) : json_encode([]);
-        $validated['streams_available'] = $validated['streams_available'] ? json_encode($validated['streams_available']) : json_encode([]);
-        $validated['medium_of_instruction'] = $validated['medium_of_instruction'] ? json_encode($validated['medium_of_instruction']) : json_encode(['ENGLISH']);
+        // Convert array values - store as comma-separated m_ids (NOT JSON)
+        $validated['classes_available'] = $validated['classes_available'] ? implode(',', $validated['classes_available']) : '';
+        $validated['streams_available'] = $validated['streams_available'] ? implode(',', $validated['streams_available']) : '';
+        $validated['medium_of_instruction'] = $validated['medium_of_instruction'] ? implode(',', $validated['medium_of_instruction']) : '';
         
         // Ensure affiliation_status is stored as integer
         $validated['affiliation_status'] = (int)$validated['affiliation_status'];
@@ -273,10 +273,34 @@ class SchoolController extends Controller
             
             DB::commit();
             
+            // Get school_admin m_id from Master table
+            $adminUserType = Master::where('m_group', 'USER_TYPE')
+                ->where('m_alias_name', 'school_admin')
+                ->first();
+            $userTypeId = $adminUserType ? $adminUserType->m_id : 2; // Default to 2 if not found
+            
+            // Create admin user for this school with auto-login
+            $adminUser = User::create([
+                'school_id' => $school->school_id,
+                'user_type' => $userTypeId,  // Store m_id (integer), not string
+                'username' => strtolower(str_replace(' ', '_', $validated['school_name'])) . '_admin',
+                'email' => $validated['email'],
+                'mobile' => $validated['contact_number'],
+                'password' => Hash::make('Admin@' . $school->school_code),
+                'first_name' => 'Admin',
+                'last_name' => 'User',
+                'is_active' => true,
+            ]);
+            
+            // Generate auth token for auto-login
+            $token = $adminUser->createToken('auth_token')->plainTextToken;
+            
             return response()->json([
                 'message' => 'School registered successfully!',
                 'school' => $school,
-                'redirect' => '/login'
+                'user' => $adminUser,
+                'token' => $token,
+                'redirect' => '/dashboard'
             ], 200);
             
         } catch (\Exception $e) {

@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::table('schools', function (Blueprint $table) {
             // Basic School Information
             $table->string('school_code')->nullable()->after('business_name');
-            $table->enum('management_type', ['private', 'government', 'aided'])->default('private')->after('school_type');
+            $table->unsignedInteger('management_type')->nullable()->after('school_type');
             
             // Location Details
             $table->string('full_address')->nullable()->after('address');
@@ -23,7 +23,7 @@ return new class extends Migration
             
             // Affiliation Details
             $table->string('affiliation_number')->nullable()->after('affiliation_board');
-            $table->enum('affiliation_status', ['active', 'pending', 'expired'])->default('pending')->after('affiliation_number');
+            $table->unsignedInteger('affiliation_status')->nullable()->after('affiliation_number');
             
             // Academic Structure
             $table->json('classes_available')->nullable()->after('affiliation_status');

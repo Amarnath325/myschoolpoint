@@ -12,22 +12,25 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('schools', function (Blueprint $table) {
-            // Convert enum/string columns that should store m_id (integers)
-            // These columns already exist as int(11) in the table, so no change needed
+            // Add missing columns for school registration
+            if (!Schema::hasColumn('schools', 'school_logo')) {
+                $table->string('school_logo')->nullable()->after('logo');
+            }
+            if (!Schema::hasColumn('schools', 'school_gallery')) {
+                $table->json('school_gallery')->nullable()->after('school_logo');
+            }
+            if (!Schema::hasColumn('schools', 'affiliate_certificate')) {
+                $table->string('affiliate_certificate')->nullable()->after('school_gallery');
+            }
+            if (!Schema::hasColumn('schools', 'registration_certificate')) {
+                $table->string('registration_certificate')->nullable()->after('affiliate_certificate');
+            }
             
-            // Fix JSON columns - ensure they're proper JSON/TEXT type
-            $table->json('classes_available')->nullable()->change();
-            $table->json('streams_available')->nullable()->change();
-            $table->json('medium_of_instruction')->nullable()->change();
+            // Ensure subscription plan is stored as integer (m_id from Masters table)
+            // No need to change if it works with integer values
             
-            // Ensure gallery and certificates are JSON
-            $table->json('school_gallery')->nullable()->change();
-            
-            // Ensure status is integer (1 = active, 0 = inactive)
-            // Already correct in table
-            
-            // Ensure subscription dates are date type
-            // Already correct in table
+            // Ensure JSON columns exist and are proper JSON type
+            // This is needed because later 2026_04_15_121241 migration may not have run yet
         });
     }
 
@@ -37,11 +40,20 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('schools', function (Blueprint $table) {
-            // Revert changes if needed
-            $table->string('classes_available')->nullable()->change();
-            $table->string('streams_available')->nullable()->change();
-            $table->string('medium_of_instruction')->nullable()->change();
-            $table->string('school_gallery')->nullable()->change();
+            // Revert by dropping new columns if they exist
+            if (Schema::hasColumn('schools', 'school_logo')) {
+                $table->dropColumn('school_logo');
+            }
+            if (Schema::hasColumn('schools', 'school_gallery')) {
+                $table->dropColumn('school_gallery');
+            }
+            if (Schema::hasColumn('schools', 'affiliate_certificate')) {
+                $table->dropColumn('affiliate_certificate');
+            }
+            if (Schema::hasColumn('schools', 'registration_certificate')) {
+                $table->dropColumn('registration_certificate');
+            }
         });
     }
 };
+

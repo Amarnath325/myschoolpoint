@@ -26,10 +26,10 @@ return new class extends Migration
             $table->string('website', 255)->nullable();
             $table->year('established_year')->nullable();
             $table->string('affiliation_board', 100)->nullable();
-            $table->enum('school_type', ['day', 'boarding', 'day_boarding'])->default('day');
+            $table->unsignedInteger('school_type')->nullable();
             $table->enum('gender_type', ['coed', 'boys', 'girls'])->default('coed');
-            $table->enum('status', ['active', 'inactive', 'suspended'])->default('active');
-            $table->enum('subscription_plan', ['trial', 'basic', 'standard', 'premium', 'enterprise'])->default('trial');
+            $table->integer('status')->default(1);
+            $table->unsignedInteger('subscription_plan')->nullable();
             $table->date('subscription_start_date')->nullable();
             $table->date('subscription_end_date')->nullable();
             $table->json('settings')->nullable();
