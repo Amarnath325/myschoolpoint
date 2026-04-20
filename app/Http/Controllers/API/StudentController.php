@@ -7,6 +7,7 @@ use App\Http\Requests\StudentRequest;
 use App\Http\Resources\StudentResource;
 use App\Models\Student;
 use App\Models\User;
+use App\Models\Master;
 use App\Models\AcademicYear;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -47,7 +48,9 @@ class StudentController extends Controller
             // Create user
             $user = User::create([
                 'school_id' => $schoolId,
-                'user_type' => 'student',
+                'user_type' => Master::where('m_group', 'USER_TYPE')
+                    ->where('m_alias_name', 'student')
+                    ->first()?->m_id ?? 4,  // Default to 4 if not found
                 'username' => $request->email,
                 'email' => $request->email,
                 'mobile' => $request->mobile,

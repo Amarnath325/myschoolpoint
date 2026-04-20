@@ -109,6 +109,17 @@ class MasterTableSeeder extends Seeder
             ['m_group' => 'AFFILIATION_STATUS', 'm_name' => 'Revoked', 'm_alias_name' => 'revoked', 'm_type' => 'revoked', 'm_description' => 'Affiliation has been revoked'],
         ];
         
+        // USER TYPES
+        $userTypes = [
+            ['m_group' => 'USER_TYPE', 'm_name' => 'Super Admin', 'm_alias_name' => 'super_admin', 'm_type' => 'active', 'm_description' => 'System super administrator'],
+            ['m_group' => 'USER_TYPE', 'm_name' => 'School Admin', 'm_alias_name' => 'school_admin', 'm_type' => 'active', 'm_description' => 'School administrator'],
+            ['m_group' => 'USER_TYPE', 'm_name' => 'Teacher', 'm_alias_name' => 'teacher', 'm_type' => 'active', 'm_description' => 'School teacher'],
+            ['m_group' => 'USER_TYPE', 'm_name' => 'Student', 'm_alias_name' => 'student', 'm_type' => 'active', 'm_description' => 'School student'],
+            ['m_group' => 'USER_TYPE', 'm_name' => 'Parent', 'm_alias_name' => 'parent', 'm_type' => 'active', 'm_description' => 'Student parent/guardian'],
+            ['m_group' => 'USER_TYPE', 'm_name' => 'Accountant', 'm_alias_name' => 'accountant', 'm_type' => 'active', 'm_description' => 'Finance accountant'],
+            ['m_group' => 'USER_TYPE', 'm_name' => 'Librarian', 'm_alias_name' => 'librarian', 'm_type' => 'active', 'm_description' => 'School librarian'],
+        ];
+        
         // GENDER TYPES
         $genders = [
             ['m_group' => 'GENDER', 'm_name' => 'MALE', 'm_alias_name' => 'Male', 'm_type' => 'active'],
@@ -239,6 +250,7 @@ class MasterTableSeeder extends Seeder
             $subscriptionPlans,
             $statusTypes,
             $affiliationStatuses,
+            $userTypes,
             $genders,
             $bloodGroups,
             $attendanceStatus,

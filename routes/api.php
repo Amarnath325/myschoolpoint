@@ -89,13 +89,6 @@ Route::middleware('auth:sanctum')->group(function () {
         // Dashboard
         Route::get('dashboard', [SchoolController::class, 'dashboard']);
         
-        // Students
-        Route::get('students', [StudentController::class, 'index']);
-        Route::post('students', [StudentController::class, 'store']);
-        Route::get('students/{student}', [StudentController::class, 'show']);
-        Route::put('students/{student}', [StudentController::class, 'update']);
-        Route::delete('students/{student}', [StudentController::class, 'destroy']);
-        
         // Teachers
         Route::get('teachers', [TeacherController::class, 'index']);
         Route::post('teachers', [TeacherController::class, 'store']);
@@ -117,6 +110,15 @@ Route::middleware('auth:sanctum')->group(function () {
         
         // Fees
         Route::get('fees/collection', [FeeController::class, 'collectionReport']);
+    });
+    
+    // Student routes (accessible by authenticated school_admin users)
+    Route::middleware('user_type:school_admin')->group(function () {
+        Route::get('students', [StudentController::class, 'index']);
+        Route::post('students', [StudentController::class, 'store']);
+        Route::get('students/{student}', [StudentController::class, 'show']);
+        Route::put('students/{student}', [StudentController::class, 'update']);
+        Route::delete('students/{student}', [StudentController::class, 'destroy']);
     });
     
     // Teacher routes
